@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>Biblioteca</title>
+    <style>
+        /* Global Reset */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; background: #fafafa; overflow-x: hidden; }
+
+        /* Contenedor del modal de autenticación */
+        .auth-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 100;
+        }
+        .auth-box {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0px 5px 15px rgba(0,0,0,0.3);
+            width: 300px;
+            text-align: center;
+        }
+        .auth-box h2 {
+            margin-bottom: 1rem;
+            color: #333;
+        }
+        .auth-box input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .auth-box button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            background: #007bff;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .auth-box button:hover {
+            opacity: 0.9;
+        }
+        .toggle-auth {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #007bff;
+            cursor: pointer;
+        }
+        .hidden { display: none; }
+
+        /* Encabezado y secciones protegidas */
+        .header { background-color: #fff; padding: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 10; }
+        h1 { text-align: center; color: #343a40; }
+        .protected { display: none; }
+
+        /* Estilos de la biblioteca */
+        .bookshelf-container {
+            margin: 10rem auto;
+            max-width: 1000px;
+            min-height: 600px;
+            background: url("https://img.freepik.com/free-vector/isolated-wood-shelf-cartoon_1308-120847.jpg");
+            background-size: cover;
+            box-shadow: 0 14px 6px rgba(0,0,0,0.2);
+            padding: 1rem;
+            position: relative;
+            clip-path: inset(19px 16px 162px 16px);
+        }
+        .shelf-title { color: transparent; }
+        .bookshelf {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 0.2rem;
+            margin: 1rem 3rem;
+        }
+        .book {
+            width: 40px;
+            height: 160px;
+            border-radius: 3px 3px 0 0;
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            box-shadow: 1px 2px 4px rgba(0,0,0,0.3);
+            margin-top: 25px;
+            margin-bottom: 10px;
+            transition: transform 0.2s ease;
+            transform-origin: bottom;
+        }
+        .book:hover { transform: scale(1.6) translateY(2.2rem); z-index: 1; }
+        .book-title { transform: rotate(-90deg); white-space: nowrap; font-size: 0.7rem; }
+        .book-info { text-align: center; font-size: 0.35rem; padding-top: 2.3rem; }
+        .book-author { padding-top: 3.3rem; }
+    </style>
+</head>
+<body>
+<!-- Modal de autenticación -->
+<div class="auth-container" id="auth-container">
+    <div class="auth-box">
+        <h2 id="auth-title">Iniciar Sesión</h2>
+        <input type="text" id="auth-username" placeholder="Usuario" required />
+        <input type="password" id="auth-password" placeholder="Contraseña" required />
+        <button id="auth-btn">Ingresar</button>
+        <p class="toggle-auth" id="toggle-auth">¿No tienes cuenta? Regístrate</p>
+    </div>
+</div>
+
+<!-- Contenido de la biblioteca (oculto hasta que el usuario inicie sesión) -->
+<div class="header protected" id="header">
+    <h1>Biblioteca</h1>
+</div>
+<div class="protected" id="main-content">
+    <!-- Formulario para Agregar Libros -->
+    <h2>Donar un Nuevo Libro</h2>
+    <form id="crear-libro-form" class="form-section">
+        <div>
+            <label for="titulo">Título:</label>
+            <input type="text" id="titulo" required />
+        </div>
+        <div>
+            <label for="autor">Autor:</label>
+            <input type="text" id="autor" required />
+        </div>
+        <div>
+            <label for="anio">Año:</label>
+            <input type="number" id="anio" required />
+        </div>
+        <button type="submit">Agregar</button>
+    </form>
+    <!-- Sección de Filtrado -->
+    <div class="offset-section" id="offset-section">
+        <label for="offset-endpoint">Filtrar:</label>
+        <input type="text" id="offset-endpoint" placeholder="localhost:8080/api/libros?offset=..." />
+        <button type="button" id="offset-btn">Cargar Libros</button>
+    </div>
+    <!-- Estantería de libros -->
+    <div class="bookshelf-container" id="bookshelf-container">
+        <div class="shelf-title">Mi Colección</div>
+        <div class="bookshelf" id="bookshelf"></div>
+    </div>
+</div>
+
+<script>
+    let userLoggeado = null;
+    let isLoginMode = true;
+    const authContainer = document.getElementById('auth-container');
+    const authTitle = document.getElementById('auth-title');
+    const authBtn = document.getElementById('auth-btn');
+    const toggleAuth = document.getElementById('toggle-auth');
+    const authUsername = document.getElementById('auth-username');
+    const authPassword = document.getElementById('auth-password');
+    const protectedElements = document.querySelectorAll('.protected');
+
+    // Alternar entre login y registro y vaciar el formulario
+    toggleAuth.addEventListener('click', () => {
+        isLoginMode = !isLoginMode;
+        authTitle.textContent = isLoginMode ? "Iniciar Sesión" : "Registrarse";
+        authBtn.textContent = isLoginMode ? "Ingresar" : "Registrar";
+        toggleAuth.textContent = isLoginMode ? "¿No tienes cuenta? Regístrate" : "¿Ya tienes cuenta? Inicia sesión";
+        // Vaciar campos
+        authUsername.value = "";
+        authPassword.value = "";
+    });
+
+    // Manejo de Login/Registro
+    authBtn.addEventListener('click', async () => {
+        const username = authUsername.value;
+        const password = authPassword.value;
+        const endpoint = isLoginMode ? '/api/user/login' : '/api/user/register';
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+            });
+            if (response.ok) {
+                userLoggeado = await response.json();
+                alert(isLoginMode ? 'Login exitoso' : 'Registro exitoso. Ahora inicia sesión.');
+                // Si es login, ocultar modal y mostrar contenido protegido
+                if (isLoginMode) {
+                    authContainer.classList.add('hidden');
+                    protectedElements.forEach(el => el.style.display = 'block');
+                    cargarLibros();
+                }
+            } else {
+                alert('Error en la autenticación. Error: ' + JSON.stringify(response.status));
+            }
+        } catch (error) {
+            console.error('Error en la autenticación:', error);
+        }
+    });
+
+    const bookshelf = document.getElementById('bookshelf');
+    const formCrearLibro = document.getElementById('crear-libro-form');
+
+    async function cargarLibros() {
+        if (!userLoggeado) return;
+        bookshelf.innerHTML = '';
+        try {
+            const response = await fetch('/api/libros');
+            if (!response.ok) {
+                console.error('Error al obtener la lista de libros');
+                return;
+            }
+            const libros = await response.json();
+            libros.forEach(libro => renderizarLibro(libro));
+        } catch (error) {
+            console.error('Error en la petición:', error);
+        }
+    }
+
+    async function crearLibro(titulo, autor, anio) {
+        try {
+            const response = await fetch('/api/libros', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ titulo, autor, anioPublicacion: anio })
+            });
+            if (response.ok) {
+                return await response.json();
+            }
+            return null;
+        } catch (error) {
+            console.error('Error al crear el libro:', error);
+            return null;
+        }
+    }
+
+    function renderizarLibro(libro) {
+        const bookDiv = document.createElement('div');
+        bookDiv.className = 'book';
+        bookDiv.style.backgroundColor = getRandomColor();
+
+        // Si el libro está alquilado, mostrar indicador; de lo contrario, botón para alquilar
+        if (libro.user) {
+            const alquiladoIcon = document.createElement('div');
+            alquiladoIcon.textContent = 'Alquilado';
+            alquiladoIcon.style.fontSize = '0.5rem';
+            bookDiv.appendChild(alquiladoIcon);
+        } else {
+            const alquilarBtn = document.createElement('button');
+            alquilarBtn.textContent = 'Alquilar';
+            alquilarBtn.style.fontSize = '0.7rem';
+            alquilarBtn.addEventListener('click', async () => {
+                const res = await fetch(`/api/alquiler/alquilar?libroId=${libro.id}&userId=${userLoggeado.id}`, { method: 'POST' });
+                if (res.ok) {
+                    alert('Libro alquilado');
+                    cargarLibros();
+                } else {
+                    alert('Error al alquilar el libro');
+                }
+            });
+            bookDiv.appendChild(alquilarBtn);
+        }
+
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'book-info';
+        const titleEl = document.createElement('div');
+        titleEl.className = 'book-title';
+        titleEl.textContent = libro.titulo;
+        const authorEl = document.createElement('div');
+        authorEl.className = 'book-author';
+        authorEl.textContent = libro.autor;
+        const yearEl = document.createElement('div');
+        yearEl.className = 'book-year';
+        yearEl.textContent = libro.anioPublicacion;
+        infoDiv.appendChild(titleEl);
+        infoDiv.appendChild(authorEl);
+        infoDiv.appendChild(yearEl);
+        bookDiv.appendChild(infoDiv);
+        bookshelf.appendChild(bookDiv);
+    }
+
+    function getRandomColor() {
+        const colors = ["#d35400", "#8e44ad", "#2ecc71", "#2980b9", "#c0392b", "#16a085", "#f39c12", "#7f8c8d", "#e74c3c", "#9b59b6", "#1abc9c", "#2c3e50"];
+        return colors[Math.floor(Math.random() * colors.length)];
+    }
+
+    formCrearLibro.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const titulo = document.getElementById('titulo').value;
+        const autor = document.getElementById('autor').value;
+        const anio = parseInt(document.getElementById('anio').value, 10);
+        const nuevoLibro = await crearLibro(titulo, autor, anio);
+        if (nuevoLibro) {
+            formCrearLibro.reset();
+            renderizarLibro(nuevoLibro);
+        }
+    });
+    function renderizarLibro(libro) {
+        const bookDiv = document.createElement('div');
+        bookDiv.className = 'book';
+        bookDiv.style.backgroundColor = getRandomColor();
+
+        // Crear un contenedor para el icono de acción (alquilar o devolver)
+        const actionIcon = document.createElement('span');
+        actionIcon.style.cursor = 'pointer';
+        actionIcon.style.position = 'absolute';
+        actionIcon.style.bottom = '3px';
+        actionIcon.style.right = '5px';
+        actionIcon.style.fontSize = '1.2rem';
+
+        // Si el libro NO está alquilado y hay un usuario logueado, mostrar icono para alquilar
+        if (!libro.user) {
+            if (userLoggeado) {
+                actionIcon.textContent = '🛒';  // Icono para alquilar
+                actionIcon.title = 'Alquilar';
+                actionIcon.addEventListener('click', async () => {
+                    const res = await fetch(`/api/alquiler/alquilar?libroId=${libro.id}&userId=${userLoggeado.id}`, { method: 'POST' });
+                    if (res.ok) {
+                        alert('Libro alquilado');
+                        cargarLibros();
+                    } else {
+                        alert('Error al alquilar el libro');
+                    }
+                });
+                bookDiv.appendChild(actionIcon);
+            }
+        } else {
+            // El libro ya está alquilado
+            // Solo el usuario que lo alquiló puede devolverlo
+            if (userLoggeado && libro.user.id === userLoggeado.id) {
+                actionIcon.textContent = '↩'; // Icono para devolver
+                actionIcon.title = 'Devolver';
+                actionIcon.addEventListener('click', async () => {
+                    const res = await fetch(`/api/alquiler/devolver?libroId=${libro.id}&userId=${userLoggeado.id}`, { method: 'POST' });
+                    if (res.ok) {
+                        alert('Libro devuelto');
+                        cargarLibros();
+                    } else {
+                        alert('Error al devolver el libro');
+                    }
+                });
+                bookDiv.appendChild(actionIcon);
+            }
+        }
+
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'book-info';
+        const titleEl = document.createElement('div');
+        titleEl.className = 'book-title';
+        titleEl.textContent = libro.titulo;
+        const authorEl = document.createElement('div');
+        authorEl.className = 'book-author';
+        authorEl.textContent = libro.autor;
+        const yearEl = document.createElement('div');
+        yearEl.className = 'book-year';
+        yearEl.textContent = libro.anioPublicacion;
+        infoDiv.appendChild(titleEl);
+        infoDiv.appendChild(authorEl);
+        infoDiv.appendChild(yearEl);
+        bookDiv.appendChild(infoDiv);
+        bookshelf.appendChild(bookDiv);
+    }
+    const offsetInput = document.getElementById('offset-endpoint');
+    const offsetBtn = document.getElementById('offset-btn');
+    offsetBtn.addEventListener('click', async () => {
+        const endpoint = offsetInput.value.trim();
+        if (!endpoint) {
+            alert('Por favor, ingrese un endpoint válido');
+            return;
+        }
+        try {
+            const response = await fetch(endpoint);
+            if (!response.ok) {
+                console.error('Error al obtener la lista de libros desde el offset endpoint');
+                alert('Error al obtener la lista de libros');
+                return;
+            }
+
+            // Await response.json() to properly parse the JSON
+            const data = await response.json();
+            console.log(data);  // Debugging: Check what data is received
+
+            // Limpiar la estantería antes de agregar los nuevos libros
+            bookshelf.innerHTML = '';
+
+            // Verificar si es un solo libro u una lista
+            if (Array.isArray(data)) {
+                data.forEach(libro => renderizarLibro(libro));
+            } else if (data && typeof data === 'object') {
+                renderizarLibro(data);
+            } else {
+                console.error('Formato de respuesta inesperado', data);
+                alert('Formato de respuesta inesperado');
+            }
+        } catch (error) {
+            console.error('Error en la petición del offset endpoint:', error);
+            alert('Error en la petición del offset endpoint');
+        }
+    });
+
+</script>
+</body>
+</html>
