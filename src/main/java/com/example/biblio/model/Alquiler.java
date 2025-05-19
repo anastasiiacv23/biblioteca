@@ -1,64 +1,62 @@
-/*package com.example.biblio.model;
-
-import jakarta.persistence.*;
+package com.example.biblio.model;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
-@Entity
-@Table(name = "alquiler")
-public class Alquiler {
+import java.time.LocalDateTime;
 
-@Id
-//para que se crea automaticamente y sea autoincriment
-@GeneratedValue(strategy = GenerationType.IDENTITY)
-private Long id;
 
-private LocalDate fechaRecogida;
-private LocalDate fechaDevolucion;
+@Document(collection = "alquileres")
+ public class Alquiler {
+  @Id
+  private String id;
+  private String userId;
+  private Libro libro;
+  private LocalDateTime fechaRecogida;
+  private LocalDateTime fechaDevolucion;
 
- @ManyToOne
- @JoinColumn(name = "user_id") // Quien alquila
- private User user;
+  public Alquiler() {
+  }
 
- @ManyToOne
-@JoinColumn(name = "libro_id") // El libro alquilado
- private Libro libro;
-
- public Alquiler() {
- }
-
- public Long getId() {
-  return id;
- }
-
- public void setId(Long id) {
-  this.id = id;
- }
-
- public LocalDate getFechaRecogida() {
-  return fechaRecogida;
- }
-
- public void setFechaRecogida(LocalDate fechaRecogida) {
+ public Alquiler(String userId, Libro libro, LocalDateTime fechaRecogida, LocalDateTime fechaDevolucion) {
+  this.userId = userId;
+  this.libro = libro;
   this.fechaRecogida = fechaRecogida;
- }
-
- public LocalDate getFechaDevolucion() {
-  return fechaDevolucion;
- }
-
- public void setFechaDevolucion(LocalDate fechaDevolucion) {
   this.fechaDevolucion = fechaDevolucion;
  }
 
- public User getUser() {
-  return user;
+ public String getId() {
+  return id;
+ }
+ public void setId(String id) {
+  this.id = id;
  }
 
- public void setUser(User user) {
-  this.user = user;
+ public LocalDateTime getFechaRecogida() {
+  return fechaRecogida;
  }
 
- public Libro getLibro() {
+ public void setFechaRecogida(LocalDateTime fechaRecogida) {
+  this.fechaRecogida = fechaRecogida;
+ }
+
+ public LocalDateTime getFechaDevolucion() {
+  return fechaDevolucion;
+ }
+
+ public void setFechaDevolucion(LocalDateTime fechaDevolucion) {
+  this.fechaDevolucion = fechaDevolucion;
+ }
+
+ public String getUserId() {
+   return userId;
+  }
+
+  public void setUserId(String userId) {
+   this.userId = userId;
+  }
+
+  public Libro getLibro() {
   return libro;
  }
 
@@ -66,4 +64,3 @@ private LocalDate fechaDevolucion;
   this.libro = libro;
  }
 }
-*/
