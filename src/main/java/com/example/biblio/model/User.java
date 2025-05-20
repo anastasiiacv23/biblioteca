@@ -1,29 +1,21 @@
 package com.example.biblio.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.*;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-
-
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.ArrayList;
 import java.util.List;
 
-@Entity
-@Table(name = "users")
+@Document(collection = "users")
 public class User {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    //  Asegura que el nombre de usuario sea único y obligatorio.
-    @Column(unique = true, nullable = false)
+    private String id;
+    @Indexed(unique = true)
     private String username;
-    // no puede ser nulo la contraseña
-    @Column(nullable = false)
-    private String password;
-
-    public User() { }
-
+    @JsonIgnore
+    private String password; // No se almacena al embebirlo
+    public User() {
+    }
     public User(String username, String password) {
         this.username = username;
         this.password = password;
@@ -38,11 +30,11 @@ public class User {
     private List<Libro> historialAlquiler=new ArrayList<>();
 */
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -61,4 +53,6 @@ public class User {
     public void setPassword(String password) {
         this.password = password;
     }
+
+
 }

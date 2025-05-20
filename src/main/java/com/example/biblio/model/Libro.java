@@ -1,48 +1,79 @@
 package com.example.biblio.model;
-import jakarta.persistence.*;
-@Entity
-@Table(name = "libros")
-public class Libro {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    private String titulo;
-    private String autor;
-
-    @Column(nullable = true)
-    private Integer anioPublicacion;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 
-    public Libro() {
-// Constructor vacio
+    @Document(collection = "libros")
+    public class Libro {
+        @Id
+        private String id;
+        //resto de atributos
+        private String titulo;
+        private String autor;
+        private String isbn;
+        private String editorial;
+
+        private Integer anioPublicacion;
+
+        public Libro() {
+            this.id = String.valueOf(System.currentTimeMillis());
+        }
+
+
+        public Libro(String id, String titulo, String autor, Integer anioPublicacion) {
+            this.id = id;
+            this.titulo = titulo;
+            this.autor = autor;
+            this.anioPublicacion = anioPublicacion;
+        }
+
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public String getTitulo() {
+            return titulo;
+        }
+
+        public void setTitulo(String titulo) {
+            this.titulo = titulo;
+        }
+
+        public String getAutor() {
+            return autor;
+        }
+
+        public void setAutor(String autor) {
+            this.autor = autor;
+        }
+
+        public Integer getAnioPublicacion() {
+            return anioPublicacion;
+        }
+
+        public String getIsbn() {
+            return isbn;
+        }
+
+        public void setIsbn(String isbn) {
+            this.isbn = isbn;
+        }
+
+        public String getEditorial() {
+            return editorial;
+        }
+
+        public void setEditorial(String editorial) {
+            this.editorial = editorial;
+        }
+
+        public void setAnioPublicacion(Integer anioPublicacion) {
+            this.anioPublicacion = anioPublicacion;
+        }
     }
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User usuario; // Usuario que alquila el libro (puede ser null si est
-    //disponible)
 
-    public Libro(Long id, String titulo, String autor, int anioPublicacion) {
-        this.id = id;
-        this.titulo = titulo;
-        this.autor = autor;
-        this.anioPublicacion = anioPublicacion;
-    }
-
-
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public String getTitulo() { return titulo; }
-    public void setTitulo(String titulo) { this.titulo = titulo; }
-    public String getAutor() { return autor; }
-    public void setAutor(String autor) { this.autor = autor; }
-    public int getAnioPublicacion() { return anioPublicacion; }
-    public void setAnioPublicacion(int anioPublicacion) {
-        this.anioPublicacion = anioPublicacion;
-    }
-
-    public User getUser() { return usuario; }
-    public void setUser(User user) { this.usuario = user; }
-
-
-}
